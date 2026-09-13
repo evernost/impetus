@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     {
       if ((a*b) % mod == ending)
       {
-        printf("- %" PRIu32 " x %" PRIu32 " =", a, b);
+        printf("- %" PRIu32 " x %" PRIu32 " = ", a, b);
 
         snprintf(buf, sizeof(buf), "%" PRIu32, a*b);
 
