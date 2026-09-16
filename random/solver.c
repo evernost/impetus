@@ -29,7 +29,7 @@
 // Max number of digits that can be manipulated.
 // It can certainly be extended up to 65535 without too much trouble.
 // Beyond that, there will be issues (size is stored in 'uint16_t')
-#define MAX_DIGITS 512
+#define MAX_DIGITS 210
 
 
 #define STYLE       "\033[4m"
@@ -60,7 +60,7 @@ int _multAccumulate(MegaNum_t* accu, MegaNum_t a_multTable[9], MegaNum_t* b, uin
 
 int roulette(MegaNum_t* x);
 
-uint16_t score(MegaNum_t x, MegaNum_t target);
+uint32_t score(MegaNum_t x, MegaNum_t target);
 uint16_t _scoreDigit(uint8_t x, uint8_t y);
 void print(MegaNum_t x);
 
@@ -72,7 +72,7 @@ void print(MegaNum_t x);
 int main(int argc, char *argv[])
 {
   int ret;
-  uint16_t bestScore = 65535;
+  uint32_t bestScore = 65535;
   MegaNum_t a = {.digits = {0}, .len = 1};
   MegaNum_t b = {.digits = {0}, .len = 1};
   MegaNum_t prod = {.digits = {0}, .len = 1};
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
   // --------------------------------------------------------------------------
   for(uint32_t i = 0; i < 100000000; i++)
   {
-    uint8_t scoreCurr;
+    uint32_t scoreCurr;
 
     //megaNum_randInit(&a, target.len/2);
     //megaNum_randInit(&b, target.len/2);
@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
       printf("- b       = "); print(b); printf("\n");
       printf("- prod    = "); print(prod); printf("\n");
       printf("- target  = "); print(target); printf("\n");
-      printf("Best score = %d\n", bestScore);
+      printf("Best score = %" PRIu32 "\n", bestScore);
       printf("\n");
     }
   }
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
   // --------------------------------------------------------------------------
   print(prod);
   print(target);
-  printf("Score = %d\n", score(prod, target));
+  printf("Score = %" PRIu32 "\n", score(prod, target));
 
 
   return EXIT_SUCCESS;
@@ -337,11 +337,11 @@ int _multAccumulate(MegaNum_t* accu, MegaNum_t a_multTable[9], MegaNum_t* b, uin
 
 
 
-uint16_t score(MegaNum_t x, MegaNum_t target)
+uint32_t score(MegaNum_t x, MegaNum_t target)
 {
-  uint16_t out = 0;
+  uint32_t out = 0;
 
-  if (x.len != target.len) return 65500;
+  if (x.len > target.len) out += 100;
 
   for (uint16_t i = 0; i < target.len; i++)
   {
@@ -363,20 +363,15 @@ uint16_t score(MegaNum_t x, MegaNum_t target)
 
 uint16_t _scoreDigit(uint8_t x, uint8_t y)
 {
-  if (x == y)
+  if (x == y) return 0;
+
+  if (x > y)
   {
-    return 0;
+    return (((x-y) > 5) ? (10-(x-y)) : (x-y));
   }
   else
   {
-    if (x > y)
-    {
-      return (x-y);
-    }
-    else
-    {
-      return (y-x);
-    }
+    return (((y-x) > 5) ? (10-(y-x)) : (y-x));
   }
 }
 
