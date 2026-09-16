@@ -58,10 +58,10 @@ int megaNum_mult(MegaNum_t* a, MegaNum_t* b, MegaNum_t* y);
 int _multMakeTable(MegaNum_t table[9], MegaNum_t* x);
 int _multAccumulate(MegaNum_t* accu, MegaNum_t a_multTable[9], MegaNum_t* b, uint16_t b_digitPtr);
 
+int roulette(MegaNum_t* x);
 
-
-uint16_t getLen(uint8_t* x);
-uint16_t score(MegaNum_t x, MegaNum_t y, MegaNum_t target);
+uint16_t score(MegaNum_t x, MegaNum_t target);
+uint16_t _scoreDigit(uint8_t x, uint8_t y);
 void print(MegaNum_t x);
 
 
@@ -72,14 +72,18 @@ void print(MegaNum_t x);
 int main(int argc, char *argv[])
 {
   int ret;
+  uint16_t bestScore = 65535;
   MegaNum_t a = {.digits = {0}, .len = 1};
   MegaNum_t b = {.digits = {0}, .len = 1};
   MegaNum_t prod = {.digits = {0}, .len = 1};
 
   // Default target number
   // Endianness: just type it like you would type it naturally.
+  // Just ignore the 'len' property, the 'megaNum_updateLen()' function
+  // will do it for you.
   // EXAMPLE: below the number 100000980001501
-  MegaNum_t target = {.digits = {1,0,0,0,0,0,9,8,0,0,0,1,5,0,1}, .len = 15};
+  MegaNum_t target = {.digits = {1,0,0,0,0,0,9,8,0,0,0,1,5,0,1}, .len = 0};
+  megaNum_updateLen(&target);
 
   // --------------------------------------------------------------------------
   // PARSE THE INPUT
@@ -91,21 +95,44 @@ int main(int argc, char *argv[])
   // SEARCH INIT
   // --------------------------------------------------------------------------
   srand((unsigned)time(NULL));
-  megaNum_randInit(&a, target.len/2);
-  megaNum_randInit(&b, target.len/2);
+  megaNum_randInit(&a, target.len/2 + 2);
+  megaNum_randInit(&b, target.len/2 + 2);
 
   // --------------------------------------------------------------------------
   // SEARCH LOOP
   // --------------------------------------------------------------------------
-  print(a);
-  print(b);
-  megaNum_mult(&a, &b, &prod);
+  for(uint32_t i = 0; i < 100000000; i++)
+  {
+    uint8_t scoreCurr;
+
+    //megaNum_randInit(&a, target.len/2);
+    //megaNum_randInit(&b, target.len/2);
+    roulette(&a);
+    roulette(&b);
+
+    for(uint16_t z = 0; z < MAX_DIGITS; z++){prod.digits[z] = 0;}
+
+    megaNum_mult(&a, &b, &prod);
+    scoreCurr = score(prod, target);
+
+    if (scoreCurr < bestScore)
+    {
+      bestScore = scoreCurr;
+      printf("- a       = "); print(a); printf("\n");
+      printf("- b       = "); print(b); printf("\n");
+      printf("- prod    = "); print(prod); printf("\n");
+      printf("- target  = "); print(target); printf("\n");
+      printf("Best score = %d\n", bestScore);
+      printf("\n");
+    }
+  }
 
   // --------------------------------------------------------------------------
   // SEARCH RESULT
   // --------------------------------------------------------------------------
   print(prod);
   print(target);
+  printf("Score = %d\n", score(prod, target));
 
 
   return EXIT_SUCCESS;
@@ -310,9 +337,47 @@ int _multAccumulate(MegaNum_t* accu, MegaNum_t a_multTable[9], MegaNum_t* b, uin
 
 
 
-uint16_t score(MegaNum_t x, MegaNum_t y, MegaNum_t target)
+uint16_t score(MegaNum_t x, MegaNum_t target)
 {
-  return 0;
+  uint16_t out = 0;
+
+  if (x.len != target.len) return 65500;
+
+  for (uint16_t i = 0; i < target.len; i++)
+  {
+    if (i == (target.len-1))
+    {
+      out += (10*_scoreDigit(x.digits[i], target.digits[i]));
+    }
+    else
+    {
+      out += _scoreDigit(x.digits[i], target.digits[i]);
+    }
+
+  }
+
+  return out;
+}
+
+
+
+uint16_t _scoreDigit(uint8_t x, uint8_t y)
+{
+  if (x == y)
+  {
+    return 0;
+  }
+  else
+  {
+    if (x > y)
+    {
+      return (x-y);
+    }
+    else
+    {
+      return (y-x);
+    }
+  }
 }
 
 
@@ -329,12 +394,25 @@ void print(MegaNum_t x)
     printf("%d", x.digits[i]);
   }
 
-  printf(" (len = %d)\n", x.len);
+  //printf(" (len = %d)\n", x.len);
 }
 
 
 
+int roulette(MegaNum_t* x)
+{
+  uint16_t randLoc;
+  //uint16_t randVal;
 
+  randLoc = (uint16_t)(rand() % (x->len));
+  //randVal = (uint8_t)(rand() % 10);
+
+  x->digits[randLoc] = (x->digits[randLoc] < 9) ? (x->digits[randLoc] + 1) : 0;
+
+  //x->digits[randLoc] = randVal;
+
+  return EXIT_SUCCESS;
+}
 
 
 
